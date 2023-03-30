@@ -21,14 +21,14 @@ class BasePage:
         return element.text
 
     def is_visible(self, locator):
-        element = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(locator))
+        element = WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located(locator))
         return bool(element)
 
     def get_title(self, title):
         element = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(title))
         return element
 
-    def get_all_elements_text(self, locator):
+    def get_all_elements(self, locator):
         elements = WebDriverWait(self.driver, 30).until(EC.visibility_of_all_elements_located(locator))
         return elements
 
@@ -39,6 +39,7 @@ class BasePage:
         select.select_by_visible_text(text)
         # select.select_by_visible_text('Banana')
 
+    # def ele_presence_wait(self):
 
 
 

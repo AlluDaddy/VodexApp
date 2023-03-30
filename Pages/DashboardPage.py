@@ -8,8 +8,8 @@ class Dashboard(BasePage):
 
     def __init__(self, driver):
         super().__init__(driver)
-        self.acc_balance = None
-        self.elements = None
+        # self.acc_balance = None
+        # self.elements = None
 
     def get_all_data(self):
         try:
