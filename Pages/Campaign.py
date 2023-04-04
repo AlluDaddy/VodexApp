@@ -52,8 +52,8 @@ class Campaign(BasePage):
         print(rows)
 
         for i in rows:
-            cols = self.get_all_elements((By.TAG_NAME, 'td'))
-            # cols = i.find_elements(By.TAG_NAME, 'td')
+            # cols = self.get_all_elements((By.TAG_NAME, 'td'))
+            cols = i.find_elements(By.TAG_NAME, 'td')
             if cols[0].text == TestData.CAMPAIGN_NAME:
                 print(f"you added {cols[0].text} and {TestData.CAMPAIGN_NAME}")
                 cols[3].click()

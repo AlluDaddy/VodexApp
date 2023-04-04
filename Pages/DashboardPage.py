@@ -1,3 +1,5 @@
+import time
+
 from Pages.BasePage import BasePage
 from selenium.webdriver.common.by import By
 from Config.config import TestData
@@ -13,7 +15,7 @@ class Dashboard(BasePage):
 
     def get_all_data(self):
         try:
-            elements = self.get_all_elements_text(self.ALL_RECORDS)
+            elements = self.get_all_elements(self.ALL_RECORDS)
             self.elements = [i.text for i in elements]
         except:
             assert False, "page not loaded"

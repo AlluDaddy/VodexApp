@@ -13,3 +13,4 @@ class TestData:
     PHONE_NUM = "1234567890"
     PHONE_NUM_DROPDOWN = "Manually add Numbers"
     CAMPAIGN_NAME = "Campaign"+x
+    GREET_TAG_NAME = "greeting"
