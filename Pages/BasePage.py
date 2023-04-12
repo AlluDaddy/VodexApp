@@ -11,13 +11,13 @@ class BasePage:
         self.driver = driver
 
     def do_clickon(self, locator):
-        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(locator)).click()
+        WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located(locator)).click()
 
     def do_send_keys(self, locator, text):
-        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(locator)).send_keys(text)
+        WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located(locator)).send_keys(text)
 
     def get_element_text(self, locator):
-        element = WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(locator))
+        element = WebDriverWait(self.driver, 20).until(EC.visibility_of_element_located(locator))
         return element.text
 
     def is_visible(self, locator):

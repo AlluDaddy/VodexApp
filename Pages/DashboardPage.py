@@ -14,6 +14,7 @@ class Dashboard(BasePage):
         # self.elements = None
 
     def get_all_data(self):
+        global elements
         try:
             elements = self.get_all_elements(self.ALL_RECORDS)
             self.elements = [i.text for i in elements]
@@ -22,6 +23,7 @@ class Dashboard(BasePage):
         return self.elements
 
     def account_bal(self):
+        global acc_balance
         self.acc_balance = int(self.elements[0][17:])
         return self.acc_balance
 

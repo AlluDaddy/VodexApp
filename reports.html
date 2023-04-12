@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"/>
+    <title>VODEX UI</title>
+    <link href="assets/style.css" rel="stylesheet" type="text/css"/></head>
+  <body onLoad="init()">
+    <script>/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this file,
+ * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+function toArray(iter) {
+    if (iter === null) {
+        return null;
+    }
+    return Array.prototype.slice.call(iter);
+}
+
+function find(selector, elem) { // eslint-disable-line no-redeclare
+    if (!elem) {
+        elem = document;
+    }
+    return elem.querySelector(selector);
+}
+
+function findAll(selector, elem) {
+    if (!elem) {
+        elem = document;
+    }
+    return toArray(elem.querySelectorAll(selector));
+}
+
+function sortColumn(elem) {
+    toggleSortStates(elem);
+    const colIndex = toArray(elem.parentNode.childNodes).indexOf(elem);
+    let key;
+    if (elem.classList.contains('result')) {
+        key = keyResult;
+    } else if (elem.classList.contains('links')) {
+        key = keyLink;
+    } else {
+        key = keyAlpha;
+    }
+    sortTable(elem, key(colIndex));
+}
+
+function showAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(showExtras);
+}
+
+function hideAllExtras() { // eslint-disable-line no-unused-vars
+    findAll('.col-result').forEach(hideExtras);
+}
+
+function showExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.remove('collapsed');
+    expandcollapse.classList.remove('expander');
+    expandcollapse.classList.add('collapser');
+}
+
+function hideExtras(colresultElem) {
+    const extras = colresultElem.parentNode.nextElementSibling;
+    const expandcollapse = colresultElem.firstElementChild;
+    extras.classList.add('collapsed');
+    expandcollapse.classList.remove('collapser');
+    expandcollapse.classList.add('expander');
+}
+
+function showFilters() {
+    let visibleString = getQueryParameter('visible') || 'all';
+    visibleString = visibleString.toLowerCase();
+    const checkedItems = visibleString.split(',');
+
+    const filterItems = document.getElementsByClassName('filter');
+    for (let i = 0; i < filterItems.length; i++) {
+        filterItems[i].hidden = false;
+
+        if (visibleString != 'all') {
+            filterItems[i].checked = checkedItems.includes(filterItems[i].getAttribute('data-test-result'));
+            filterTable(filterItems[i]);
+        }
+    }
+}
+
+function addCollapse() {
+    // Add links for show/hide all
+    const resulttable = find('table#results-table');
+    const showhideall = document.createElement('p');
+    showhideall.innerHTML = '<a href="javascript:showAllExtras()">Show all details</a> / ' +
+                            '<a href="javascript:hideAllExtras()">Hide all details</a>';
+    resulttable.parentElement.insertBefore(showhideall, resulttable);
+
+    // Add show/hide link to each result
+    findAll('.col-result').forEach(function(elem) {
+        const collapsed = getQueryParameter('collapsed') || 'Passed';
+        const extras = elem.parentNode.nextElementSibling;
+        const expandcollapse = document.createElement('span');
+        if (extras.classList.contains('collapsed')) {
+            expandcollapse.classList.add('expander');
+        } else if (collapsed.includes(elem.innerHTML)) {
+            extras.classList.add('collapsed');
+            expandcollapse.classList.add('expander');
+        } else {
+            expandcollapse.classList.add('collapser');
+        }
+        elem.appendChild(expandcollapse);
+
+        elem.addEventListener('click', function(event) {
+            if (event.currentTarget.parentNode.nextElementSibling.classList.contains('collapsed')) {
+                showExtras(event.currentTarget);
+            } else {
+                hideExtras(event.currentTarget);
+            }
+        });
+    });
+}
+
+function getQueryParameter(name) {
+    const match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
+
+function init () { // eslint-disable-line no-unused-vars
+    resetSortHeaders();
+
+    addCollapse();
+
+    showFilters();
+
+    sortColumn(find('.initial-sort'));
+
+    findAll('.sortable').forEach(function(elem) {
+        elem.addEventListener('click',
+            function() {
+                sortColumn(elem);
+            }, false);
+    });
+}
+
+function sortTable(clicked, keyFunc) {
+    const rows = findAll('.results-table-row');
+    const reversed = !clicked.classList.contains('asc');
+    const sortedRows = sort(rows, keyFunc, reversed);
+    /* Whole table is removed here because browsers acts much slower
+     * when appending existing elements.
+     */
+    const thead = document.getElementById('results-table-head');
+    document.getElementById('results-table').remove();
+    const parent = document.createElement('table');
+    parent.id = 'results-table';
+    parent.appendChild(thead);
+    sortedRows.forEach(function(elem) {
+        parent.appendChild(elem);
+    });
+    document.getElementsByTagName('BODY')[0].appendChild(parent);
+}
+
+function sort(items, keyFunc, reversed) {
+    const sortArray = items.map(function(item, i) {
+        return [keyFunc(item), i];
+    });
+
+    sortArray.sort(function(a, b) {
+        const keyA = a[0];
+        const keyB = b[0];
+
+        if (keyA == keyB) return 0;
+
+        if (reversed) {
+            return keyA < keyB ? 1 : -1;
+        } else {
+            return keyA > keyB ? 1 : -1;
+        }
+    });
+
+    return sortArray.map(function(item) {
+        const index = item[1];
+        return items[index];
+    });
+}
+
+function keyAlpha(colIndex) {
+    return function(elem) {
+        return elem.childNodes[1].childNodes[colIndex].firstChild.data.toLowerCase();
+    };
+}
+
+function keyLink(colIndex) {
+    return function(elem) {
+        const dataCell = elem.childNodes[1].childNodes[colIndex].firstChild;
+        return dataCell == null ? '' : dataCell.innerText.toLowerCase();
+    };
+}
+
+function keyResult(colIndex) {
+    return function(elem) {
+        const strings = ['Error', 'Failed', 'Rerun', 'XFailed', 'XPassed',
+            'Skipped', 'Passed'];
+        return strings.indexOf(elem.childNodes[1].childNodes[colIndex].firstChild.data);
+    };
+}
+
+function resetSortHeaders() {
+    findAll('.sort-icon').forEach(function(elem) {
+        elem.parentNode.removeChild(elem);
+    });
+    findAll('.sortable').forEach(function(elem) {
+        const icon = document.createElement('div');
+        icon.className = 'sort-icon';
+        icon.textContent = 'vvv';
+        elem.insertBefore(icon, elem.firstChild);
+        elem.classList.remove('desc', 'active');
+        elem.classList.add('asc', 'inactive');
+    });
+}
+
+function toggleSortStates(elem) {
+    //if active, toggle between asc and desc
+    if (elem.classList.contains('active')) {
+        elem.classList.toggle('asc');
+        elem.classList.toggle('desc');
+    }
+
+    //if inactive, reset all other functions and add ascending active
+    if (elem.classList.contains('inactive')) {
+        resetSortHeaders();
+        elem.classList.remove('inactive');
+        elem.classList.add('active');
+    }
+}
+
+function isAllRowsHidden(value) {
+    return value.hidden == false;
+}
+
+function filterTable(elem) { // eslint-disable-line no-unused-vars
+    const outcomeAtt = 'data-test-result';
+    const outcome = elem.getAttribute(outcomeAtt);
+    const classOutcome = outcome + ' results-table-row';
+    const outcomeRows = document.getElementsByClassName(classOutcome);
+
+    for(let i = 0; i < outcomeRows.length; i++){
+        outcomeRows[i].hidden = !elem.checked;
+    }
+
+    const rows = findAll('.results-table-row').filter(isAllRowsHidden);
+    const allRowsHidden = rows.length == 0 ? true : false;
+    const notFoundMessage = document.getElementById('not-found-message');
+    notFoundMessage.hidden = !allRowsHidden;
+}
+</script>
+    <h1>VODEX UI</h1>
+    <p>Report generated on 05-Apr-2023 at 20:48:23 by <a href="https://pypi.python.org/pypi/pytest-html">pytest-html</a> v3.2.0</p>
+    <h2>Environment</h2>
+    <table id="environment">
+      <tr>
+        <td>Packages</td>
+        <td>{"pluggy": "1.0.0", "pytest": "7.2.2"}</td></tr>
+      <tr>
+        <td>Platform</td>
+        <td>Windows-10-10.0.19045-SP0</td></tr>
+      <tr>
+        <td>Plugins</td>
+        <td>{"html": "3.2.0", "html-reporter": "0.2.9", "metadata": "2.0.4"}</td></tr>
+      <tr>
+        <td>Python</td>
+        <td>3.10.10</td></tr></table>
+    <h2>Summary</h2>
+    <h3>Adding prefix message</h3>
+    <p>5 tests ran in 185.23 seconds. </p>
+    <p class="filter" hidden="true">(Un)check the boxes to filter the results.</p><input checked="true" class="filter" data-test-result="passed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="passed">2 passed</span>, <input checked="true" class="filter" data-test-result="skipped" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="skipped">0 skipped</span>, <input checked="true" class="filter" data-test-result="failed" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="failed">3 failed</span>, <input checked="true" class="filter" data-test-result="error" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="error">0 errors</span>, <input checked="true" class="filter" data-test-result="xfailed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xfailed">0 expected failures</span>, <input checked="true" class="filter" data-test-result="xpassed" disabled="true" hidden="true" name="filter_checkbox" onChange="filterTable(this)" type="checkbox"/><span class="xpassed">0 unexpected passes</span>
+    <h3>Adding summary message</h3>
+    <h3>Adding postfix message</h3>
+    <h2>Results</h2>
+    <table id="results-table">
+      <thead id="results-table-head">
+        <tr>
+          <th class="sortable result initial-sort" col="result">Result</th>
+          <th class="sortable" col="name">Test</th>
+          <th>Description</th>
+          <th class="sortable" col="duration">Duration</th></tr>
+        <tr hidden="true" id="not-found-message">
+          <th colspan="4">No results found. Try to check the filters</th></tr></thead>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">test_LoginPage.py::Test_Main::test_3[chrome]</td>
+          <td></td>
+          <td class="col-duration">2.30</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div><div><img src="test_LoginPage.py_Test_Main_test_3[chrome].png" alt="screenshot" style="width:304px;height:228px;" onclick="window.open(this.src)" align="right"/></div></div>
+            <div class="log">self = &lt;Vodex.Tests.test_LoginPage.Test_Main object at 0x000001773F305720&gt;<br/><br/>    def test_3(self):<br/>&gt;       self.dashboard_page.account_bal()<br/><br/>test_LoginPage.py:17: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;Pages.DashboardPage.Dashboard object at 0x000001773F333250&gt;<br/><br/>    def account_bal(self):<br/>&gt;       self.acc_balance = int(self.elements[0][17:])<br/><span class="error">E       AttributeError: &#x27;Dashboard&#x27; object has no attribute &#x27;elements&#x27;</span><br/><br/>..\Pages\DashboardPage.py:25: AttributeError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">test_LoginPage.py::Test_Main::test_4[chrome]</td>
+          <td></td>
+          <td class="col-duration">0.48</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div><div><img src="test_LoginPage.py_Test_Main_test_4[chrome].png" alt="screenshot" style="width:304px;height:228px;" onclick="window.open(this.src)" align="right"/></div></div>
+            <div class="log">self = &lt;Vodex.Tests.test_LoginPage.Test_Main object at 0x000001773F3065C0&gt;<br/><br/>    def test_4(self):<br/>&gt;       self.dashboard_page.val_account_bal()<br/><br/>test_LoginPage.py:20: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;Pages.DashboardPage.Dashboard object at 0x000001773F3308B0&gt;<br/><br/>    def val_account_bal(self):<br/>&gt;       if self.acc_balance&gt;=4:<br/><span class="error">E       AttributeError: &#x27;Dashboard&#x27; object has no attribute &#x27;acc_balance&#x27;</span><br/><br/>..\Pages\DashboardPage.py:29: AttributeError<br/></div></td></tr></tbody>
+      <tbody class="failed results-table-row">
+        <tr>
+          <td class="col-result">Failed</td>
+          <td class="col-name">test_LoginPage.py::Test_Main::test_5[chrome]</td>
+          <td></td>
+          <td class="col-duration">63.36</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div><div><img src="test_LoginPage.py_Test_Main_test_5[chrome].png" alt="screenshot" style="width:304px;height:228px;" onclick="window.open(this.src)" align="right"/></div></div>
+            <div class="log">self = &lt;Vodex.Tests.test_LoginPage.Test_Main object at 0x000001773F3067D0&gt;<br/><br/>    def test_5(self):<br/>        self.audience_page.create_audience()<br/>        self.campaign_page.create_campaign()<br/>&gt;       self.campaign_page.run_campaign()<br/><br/>test_LoginPage.py:25: <br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/>..\Pages\Campaign.py:56: in run_campaign<br/>    cols = i.find_elements(By.TAG_NAME, &#x27;td&#x27;)<br/>..\venv\lib\site-packages\selenium\webdriver\remote\webelement.py:448: in find_elements<br/>    return self._execute(Command.FIND_CHILD_ELEMENTS, {&quot;using&quot;: by, &quot;value&quot;: value})[&quot;value&quot;]<br/>..\venv\lib\site-packages\selenium\webdriver\remote\webelement.py:404: in _execute<br/>    return self._parent.execute(command, params)<br/>..\venv\lib\site-packages\selenium\webdriver\remote\webdriver.py:440: in execute<br/>    self.error_handler.check_response(response)<br/>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br/><br/>self = &lt;selenium.webdriver.remote.errorhandler.ErrorHandler object at 0x000001773F331A80&gt;<br/>response = {&#x27;status&#x27;: 404, &#x27;value&#x27;: &#x27;{&quot;value&quot;:{&quot;error&quot;:&quot;stale element reference&quot;,&quot;message&quot;:&quot;stale element reference: element is n...\n\\tRtlGetAppContainerNamedObjectPath [0x77307BBE+286]\\n\\tRtlGetAppContainerNamedObjectPath [0x77307B8E+238]\\n&quot;}}&#x27;}<br/><br/>    def check_response(self, response: Dict[str, Any]) -&gt; None:<br/>        &quot;&quot;&quot;Checks that a JSON response from the WebDriver does not have an<br/>        error.<br/>    <br/>        :Args:<br/>         - response - The JSON response from the WebDriver server as a dictionary<br/>           object.<br/>    <br/>        :Raises: If the response contains an error message.<br/>        &quot;&quot;&quot;<br/>        status = response.get(&quot;status&quot;, None)<br/>        if not status or status == ErrorCode.SUCCESS:<br/>            return<br/>        value = None<br/>        message = response.get(&quot;message&quot;, &quot;&quot;)<br/>        screen: str = response.get(&quot;screen&quot;, &quot;&quot;)<br/>        stacktrace = None<br/>        if isinstance(status, int):<br/>            value_json = response.get(&quot;value&quot;, None)<br/>            if value_json and isinstance(value_json, str):<br/>                import json<br/>    <br/>                try:<br/>                    value = json.loads(value_json)<br/>                    if len(value) == 1:<br/>                        value = value[&quot;value&quot;]<br/>                    status = value.get(&quot;error&quot;, None)<br/>                    if not status:<br/>                        status = value.get(&quot;status&quot;, ErrorCode.UNKNOWN_ERROR)<br/>                        message = value.get(&quot;value&quot;) or value.get(&quot;message&quot;)<br/>                        if not isinstance(message, str):<br/>                            value = message<br/>                            message = message.get(&quot;message&quot;)<br/>                    else:<br/>                        message = value.get(&quot;message&quot;, None)<br/>                except ValueError:<br/>                    pass<br/>    <br/>        exception_class: Type[WebDriverException]<br/>        if status in ErrorCode.NO_SUCH_ELEMENT:<br/>            exception_class = NoSuchElementException<br/>        elif status in ErrorCode.NO_SUCH_FRAME:<br/>            exception_class = NoSuchFrameException<br/>        elif status in ErrorCode.NO_SUCH_SHADOW_ROOT:<br/>            exception_class = NoSuchShadowRootException<br/>        elif status in ErrorCode.NO_SUCH_WINDOW:<br/>            exception_class = NoSuchWindowException<br/>        elif status in ErrorCode.STALE_ELEMENT_REFERENCE:<br/>            exception_class = StaleElementReferenceException<br/>        elif status in ErrorCode.ELEMENT_NOT_VISIBLE:<br/>            exception_class = ElementNotVisibleException<br/>        elif status in ErrorCode.INVALID_ELEMENT_STATE:<br/>            exception_class = InvalidElementStateException<br/>        elif (<br/>            status in ErrorCode.INVALID_SELECTOR<br/>            or status in ErrorCode.INVALID_XPATH_SELECTOR<br/>            or status in ErrorCode.INVALID_XPATH_SELECTOR_RETURN_TYPER<br/>        ):<br/>            exception_class = InvalidSelectorException<br/>        elif status in ErrorCode.ELEMENT_IS_NOT_SELECTABLE:<br/>            exception_class = ElementNotSelectableException<br/>        elif status in ErrorCode.ELEMENT_NOT_INTERACTABLE:<br/>            exception_class = ElementNotInteractableException<br/>        elif status in ErrorCode.INVALID_COOKIE_DOMAIN:<br/>            exception_class = InvalidCookieDomainException<br/>        elif status in ErrorCode.UNABLE_TO_SET_COOKIE:<br/>            exception_class = UnableToSetCookieException<br/>        elif status in ErrorCode.TIMEOUT:<br/>            exception_class = TimeoutException<br/>        elif status in ErrorCode.SCRIPT_TIMEOUT:<br/>            exception_class = TimeoutException<br/>        elif status in ErrorCode.UNKNOWN_ERROR:<br/>            exception_class = WebDriverException<br/>        elif status in ErrorCode.UNEXPECTED_ALERT_OPEN:<br/>            exception_class = UnexpectedAlertPresentException<br/>        elif status in ErrorCode.NO_ALERT_OPEN:<br/>            exception_class = NoAlertPresentException<br/>        elif status in ErrorCode.IME_NOT_AVAILABLE:<br/>            exception_class = ImeNotAvailableException<br/>        elif status in ErrorCode.IME_ENGINE_ACTIVATION_FAILED:<br/>            exception_class = ImeActivationFailedException<br/>        elif status in ErrorCode.MOVE_TARGET_OUT_OF_BOUNDS:<br/>            exception_class = MoveTargetOutOfBoundsException<br/>        elif status in ErrorCode.JAVASCRIPT_ERROR:<br/>            exception_class = JavascriptException<br/>        elif status in ErrorCode.SESSION_NOT_CREATED:<br/>            exception_class = SessionNotCreatedException<br/>        elif status in ErrorCode.INVALID_ARGUMENT:<br/>            exception_class = InvalidArgumentException<br/>        elif status in ErrorCode.NO_SUCH_COOKIE:<br/>            exception_class = NoSuchCookieException<br/>        elif status in ErrorCode.UNABLE_TO_CAPTURE_SCREEN:<br/>            exception_class = ScreenshotException<br/>        elif status in ErrorCode.ELEMENT_CLICK_INTERCEPTED:<br/>            exception_class = ElementClickInterceptedException<br/>        elif status in ErrorCode.INSECURE_CERTIFICATE:<br/>            exception_class = InsecureCertificateException<br/>        elif status in ErrorCode.INVALID_COORDINATES:<br/>            exception_class = InvalidCoordinatesException<br/>        elif status in ErrorCode.INVALID_SESSION_ID:<br/>            exception_class = InvalidSessionIdException<br/>        elif status in ErrorCode.UNKNOWN_METHOD:<br/>            exception_class = UnknownMethodException<br/>        else:<br/>            exception_class = WebDriverException<br/>        if not value:<br/>            value = response[&quot;value&quot;]<br/>        if isinstance(value, str):<br/>            raise exception_class(value)<br/>        if message == &quot;&quot; and &quot;message&quot; in value:<br/>            message = value[&quot;message&quot;]<br/>    <br/>        screen = None  # type: ignore[assignment]<br/>        if &quot;screen&quot; in value:<br/>            screen = value[&quot;screen&quot;]<br/>    <br/>        stacktrace = None<br/>        st_value = value.get(&quot;stackTrace&quot;) or value.get(&quot;stacktrace&quot;)<br/>        if st_value:<br/>            if isinstance(st_value, str):<br/>                stacktrace = st_value.split(&quot;\n&quot;)<br/>            else:<br/>                stacktrace = []<br/>                try:<br/>                    for frame in st_value:<br/>                        line = frame.get(&quot;lineNumber&quot;, &quot;&quot;)<br/>                        file = frame.get(&quot;fileName&quot;, &quot;&lt;anonymous&gt;&quot;)<br/>                        if line:<br/>                            file = f&quot;{file}:{line}&quot;<br/>                        meth = frame.get(&quot;methodName&quot;, &quot;&lt;anonymous&gt;&quot;)<br/>                        if &quot;className&quot; in frame:<br/>                            meth = f&quot;{frame[&#x27;className&#x27;]}.{meth}&quot;<br/>                        msg = &quot;    at %s (%s)&quot;<br/>                        msg = msg % (meth, file)<br/>                        stacktrace.append(msg)<br/>                except TypeError:<br/>                    pass<br/>        if exception_class == UnexpectedAlertPresentException:<br/>            alert_text = None<br/>            if &quot;data&quot; in value:<br/>                alert_text = value[&quot;data&quot;].get(&quot;text&quot;)<br/>            elif &quot;alert&quot; in value:<br/>                alert_text = value[&quot;alert&quot;].get(&quot;text&quot;)<br/>            raise exception_class(message, screen, stacktrace, alert_text)  # type: ignore[call-arg]  # mypy is not smart enough here<br/>&gt;       raise exception_class(message, screen, stacktrace)<br/><span class="error">E       selenium.common.exceptions.StaleElementReferenceException: Message: stale element reference: element is not attached to the page document</span><br/><span class="error">E         (Session info: chrome=111.0.5563.147)</span><br/><span class="error">E       Stacktrace:</span><br/><span class="error">E       Backtrace:</span><br/><span class="error">E       	(No symbol) [0x0045DCE3]</span><br/><span class="error">E       	(No symbol) [0x003F39D1]</span><br/><span class="error">E       	(No symbol) [0x00304DA8]</span><br/><span class="error">E       	(No symbol) [0x003076FB]</span><br/><span class="error">E       	(No symbol) [0x003075D0]</span><br/><span class="error">E       	(No symbol) [0x00307850]</span><br/><span class="error">E       	(No symbol) [0x0032FDF8]</span><br/><span class="error">E       	(No symbol) [0x003303AB]</span><br/><span class="error">E       	(No symbol) [0x00328AE1]</span><br/><span class="error">E       	(No symbol) [0x0034AF14]</span><br/><span class="error">E       	(No symbol) [0x00328726]</span><br/><span class="error">E       	(No symbol) [0x0034B224]</span><br/><span class="error">E       	(No symbol) [0x0035D57C]</span><br/><span class="error">E       	(No symbol) [0x0034ACC6]</span><br/><span class="error">E       	(No symbol) [0x00326F68]</span><br/><span class="error">E       	(No symbol) [0x003280CD]</span><br/><span class="error">E       	GetHandleVerifier [0x006D3832+2506274]</span><br/><span class="error">E       	GetHandleVerifier [0x00709794+2727300]</span><br/><span class="error">E       	GetHandleVerifier [0x0070E36C+2746716]</span><br/><span class="error">E       	GetHandleVerifier [0x00506690+617600]</span><br/><span class="error">E       	(No symbol) [0x003FC712]</span><br/><span class="error">E       	(No symbol) [0x00401FF8]</span><br/><span class="error">E       	(No symbol) [0x004020DB]</span><br/><span class="error">E       	(No symbol) [0x0040C63B]</span><br/><span class="error">E       	BaseThreadInitThunk [0x766300F9+25]</span><br/><span class="error">E       	RtlGetAppContainerNamedObjectPath [0x77307BBE+286]</span><br/><span class="error">E       	RtlGetAppContainerNamedObjectPath [0x77307B8E+238]</span><br/><br/>..\venv\lib\site-packages\selenium\webdriver\remote\errorhandler.py:245: StaleElementReferenceException<br/> ------------------------------Captured stdout call------------------------------ <br/>audience clicked
+audience list audience
+clicked on audience save
+clicked on campaign link
+campaign try link
+Campaign button is found
+[&lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;81d5c7d5-324d-425b-be3d-905efc57fc82&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;53f104de-c63d-40f4-abe9-121a1816c2c6&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;0727ae10-3404-49d1-afcb-0e922974a2b6&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;80d298f2-f451-496c-9002-c9cca755c8ea&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;65fb7e07-b798-4f46-ad87-4fe126226fa9&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;6c59cb34-abe3-42e4-b042-6638f67a6aa4&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;d512bc64-2875-4fd7-bfe0-6d4b5f6b9c9a&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;a8d9fa3b-04f8-4431-a600-ab6e767fb995&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;362c1b48-2b70-40e5-b7c3-b5eedaab2234&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;ca623c03-41b6-413e-b0fc-9ed5d24294d7&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;1cd36c79-b743-4903-be9a-2436e53c8012&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;c5f15c63-3949-4de7-8ca3-cc95900d0ead&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;9e13fafd-0557-4587-8c34-23a9ab370bf3&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;24c1a301-e16d-4762-8334-d0aae66a1123&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;f700a96d-b29a-4636-86d3-9b0ab63be623&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;fc41d3ac-b8dd-443a-bab5-7d7b7f2a5bf5&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;7c0fcd3a-19d2-40ea-9c4a-40b48f6f3a3f&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;7a6c9203-f93d-4fef-872e-cbc13283597e&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;e89256e6-ce74-40ce-b0a5-520e149de064&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;180033bb-d546-4dc0-a370-d884032396c9&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;a113cf8d-de4e-4155-9023-f52a2f786188&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;15489a12-d7e0-4514-a354-f4c36045acc5&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;cf340bf6-07b7-4c7f-b70e-97885caaa536&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;55067fcf-2f2a-4cc8-ba91-9f655bc5b283&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;bbe5a9c0-db10-4eff-9e33-df916bfd2e67&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;fb7fdb92-2b44-41d2-bc3b-0b31600538d8&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;9a102e39-4547-4030-803a-9da2463318e3&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;6752914c-964c-4b30-93c2-208353380dbc&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;16da0235-8d6d-442f-b7ea-299a0a687976&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;50f387c0-1778-4ad0-a3fd-8320d6365a50&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;ad12404a-9212-4488-9b87-68e616d8dbe3&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;5dfc1c7b-3881-49b0-9444-6394289e82d9&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;30b38835-9d8a-4b2f-9133-bae1061a2426&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;fb59f127-12be-4e01-a469-19a29dadbdec&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;07ae762f-b57c-4d72-82a6-7ee1e3b62d27&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;2cc48f0d-2c40-40a4-be8d-6f33c5e5d5b8&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;aae264e8-7d1c-4310-a301-f3215fd7a946&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;7943c813-6c52-40b0-9d2a-3b038810d36d&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;b4dcd13b-f504-481b-a6fc-8a0541688c6c&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;b23004df-3bfe-4025-953e-18a14292ef8e&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;e7020701-2269-4b14-976f-71a087b17663&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;fb67b58e-b0ae-4502-9a51-6c74f6ccfb70&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;e2ad43c9-82be-4215-a543-5f5831fa0ead&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;04348585-0fda-4e89-9c19-56284c1af299&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;279c6de9-aefe-4bd8-838b-493ccd0e2454&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;02667914-1406-4b05-ac38-49c1e65b16c7&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;56bd0496-3f3f-4d15-89be-8a15e9e56f0f&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;048ec9d8-3fd1-4a94-8b89-3e4f5c6c27d3&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;11908bb7-5f5a-41cc-afc4-24b59c3c8437&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;beb9839f-1b69-4c6d-a755-fb8cdf2f12a5&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;5026159b-79a0-4b47-92bf-3b1603d28f13&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;1ab913ce-20ee-41ed-a016-74e3edb400a9&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;8cda8fa9-e30d-47fc-95d2-f8f6a60d0369&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;870cd295-3ba2-46b1-90e8-e926267f94ed&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;138018e4-4a42-4856-8d3b-8f6f225012c2&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;46e2eac2-c0c1-4df6-b78a-e99a9b84bd43&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;f48b154f-3195-4dd3-adfb-edf92f324fd9&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;30bccd15-1118-4a0f-9d84-692aaf83fd7b&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;371aaf2a-635c-4f34-9d52-0b60e5c3af15&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;0fcd154b-fd4b-424e-8cf5-ba8fd4648f87&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;dc784409-9d65-487f-87c9-b756dd57f41b&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;bb4857ec-0d7c-4d28-979f-f5aeb928ab3f&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;de45ab18-0153-478c-870f-4d566a3c2565&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;0c843d7c-f0a3-46a0-8430-1d4dfd01dde3&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;aad27142-ea36-4ed0-a821-3af4ab831a55&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;2ae6c15e-e31e-425a-bdad-60bc0f5b17f1&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;703b3147-8ed1-4e18-9cf1-8fc58277956f&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;228551ae-efa3-40dd-b7ea-70aebcecc9d2&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;53e1ac48-e9a6-4825-915c-f855a26bdee4&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;6b733345-4b1c-40a8-a056-208010a73a20&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;7c33b451-fac1-4eaa-af3c-36312f48c30d&quot;)&gt;, &lt;selenium.webdriver.remote.webelement.WebElement (session=&quot;173e763585d2e0fd0b52c79ed645fff3&quot;, element=&quot;1a78e2ed-edcf-4886-8105-591d5e017223&quot;)&gt;]
+you added Campaign0405202320451708 and Campaign0405202320451708
+<br/></div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">test_LoginPage.py::Test_Main::test_main[chrome]</td>
+          <td></td>
+          <td class="col-duration">111.52</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody>
+      <tbody class="passed results-table-row">
+        <tr>
+          <td class="col-result">Passed</td>
+          <td class="col-name">test_LoginPage.py::Test_Main::test_sec[chrome]</td>
+          <td></td>
+          <td class="col-duration">6.60</td>
+          <td class="col-links"></td></tr>
+        <tr>
+          <td class="extra" colspan="5">
+            <div class="empty log">No log output captured.</div></td></tr></tbody></table></body></html>
