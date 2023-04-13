@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
 class Campaign(BasePage):
     CAMPAIGN_LINK = (By.XPATH, "*//span[contains(text(),'Campaign')]")
     ADD_CAMPAIGN_BUTTON = (By.XPATH, "*//button[contains(text(),' Add Campaign')]")
@@ -45,29 +46,17 @@ class Campaign(BasePage):
         self.do_clickon(self.CAMPAIGN_SAVE)
         time.sleep(10)
 
-    def run_campaign(self):
+    def trigger_call(self):
         # global cols
         table = self.driver.find_element(By.CLASS_NAME, 'table')
         body = table.find_element(By.TAG_NAME, 'tbody')
         rows = body.find_elements(By.TAG_NAME, 'tr')
-        cells = body.find_elements(By.TAG_NAME, 'td')
-
-        print(rows)
-
         for i in rows:
-            self.cols = i.find_elements(By.TAG_NAME, 'td')
-
-            # cols = self.get_all_elements((By.TAG_NAME, 'td'))
-            # try:
-            #     # wait 10 seconds before looking for element
-            #     cols = WebDriverWait(self.driver, 30).until(
-            #         EC.presence_of_element_located(i.find_elements(By.TAG_NAME, 'td')))
-            # except:
-            #     print("=============>failed")
-            #
-            # cols = i.find_elements(By.TAG_NAME, 'td')
-            if self.cols[0].text == TestData.CAMPAIGN_NAME:
-                print(f"you added {self.cols[0].text} and {TestData.CAMPAIGN_NAME}")
-                self.cols[3].click()
+            cells = body.find_elements(By.TAG_NAME, 'td')
+            print(rows)
+            cols = i.find_elements(By.TAG_NAME, 'td')
+            if cols[0].text == TestData.CAMPAIGN_NAME:
+                print(f"you added {cols[0].text} and {TestData.CAMPAIGN_NAME}")
+                cols[3].click()
                 time.sleep(15)
                 break

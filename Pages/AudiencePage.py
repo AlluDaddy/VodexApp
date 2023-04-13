@@ -15,7 +15,6 @@ class Audience(BasePage):
     LAST_NAME = (By.ID, 'id_Last Name')
     PHONE_NUM = (By.ID, 'id_Phone')
     AUDIENCE_SAVE = (By.XPATH, "//button[@type='submit' and text()='Save'] ")
-
     AUDIENCE_DUP_POP = (By.XPATH, '//*[@class="modal-title h4"]')
     AUDIENCE_POP_SAVE = (By.XPATH, '*//button[contains(text(), "Save Changes")]')
 

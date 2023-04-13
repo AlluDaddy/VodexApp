@@ -20,22 +20,27 @@ class Recording(BasePage):
         self.do_clickon(self.RECORDINGS_LINK)
         time.sleep(5)
         print("clicked on campaign link")
+
+        scroll_bar = self.driver.find_element(By.XPATH, ' *//div[contains(@class,"table-responsive")]')
+        self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollTop + arguments[0].offsetHeight;',
+                                   scroll_bar)
+        time.sleep(5)
         self.table = self.driver.find_element(By.CLASS_NAME, 'table')
         self.body = self.table.find_element(By.TAG_NAME, 'tbody')
         self.rows = self.body.find_elements(By.TAG_NAME, 'tr')
         self.cells = self.body.find_elements(By.TAG_NAME, 'td')
         self.upload_record(TestData.GREET_TAG_NAME, self.PATH_WELCOME)
-        scroll_bar = self.driver.find_element(By.XPATH, ' *//div[contains(@class,"table-responsive")]')
-        self.driver.execute_script('arguments[0].scrollTop = arguments[0].scrollTop + arguments[0].offsetHeight;',
-                                   scroll_bar)
         time.sleep(20)
         self.upload_record(TestData.FALLBACK_TAG_NAME, self.PATH_BYE)
 
     def upload_record(self, tag_name, recording_path):
+        self.rows = self.body.find_elements(By.TAG_NAME, 'tr')
         for i in self.rows:
             self.cols = i.find_elements(By.TAG_NAME, 'td')
-            print(self.cols[1].text)
+            print("--->", self.cols[1].text)
             if self.cols[1].text == tag_name:
+                print(self.cols[4].text)
+                time.sleep(1)
                 self.cols[4].click()
         self.do_clickon(self.RECORDINGS_LIST_DROPDOWN)
         time.sleep(10)

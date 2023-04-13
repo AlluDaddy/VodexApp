@@ -10,6 +10,7 @@ from Pages.Campaign import Campaign
 from Pages.DashboardPage import Dashboard
 from Pages.LoginPage import Login
 from Pages.Recordings import Recording
+from Pages.Templates import Templates
 from Tests.test_base import BaseTest
 from py.xml import html
 
@@ -36,7 +37,8 @@ def driver_init(request):
 def _capture_screenshot(name):
     driver.get_screenshot_as_file(name)
 
-
+    
+ 
 @pytest.mark.hookwrapper
 def pytest_runtest_makereport(item):
     """
@@ -50,14 +52,44 @@ def pytest_runtest_makereport(item):
 
     if report.when == 'call' or report.when == "setup":
         xfail = hasattr(report, 'wasxfail')
-        # if (report.skipped and xfail) or (report.failed and not xfail):
+# <<<<<<< HEAD
+#         # if (report.skipped and xfail) or (report.failed and not xfail):
+#         file_name = report.nodeid.replace("::", "_") + ".png"
+#         _capture_screenshot(file_name)
+#         if file_name:
+#             html = '<div><img src="%s" alt="screenshot" style="width:304px;height:228px;" ' \
+# =======
+#         # if (report.failed and xfail) or (report.failed and not xfail):
+        print(report.nodeid)
         file_name = report.nodeid.replace("::", "_") + ".png"
         _capture_screenshot(file_name)
         if file_name:
-            html = '<div><img src="%s" alt="screenshot" style="width:304px;height:228px;" ' \
-                   'onclick="window.open(this.src)" align="right"/></div>' % file_name
+            html = '<div><img src="%s" alt="screenshot" style="width:204px;height:128px;" onclick="window.open(this.src)" align="right"/></div>' % file_name
             extra.append(pytest_html.extras.html(html))
         report.extra = extra
+ 
+
+# @pytest.mark.hookwrapper
+# def pytest_runtest_makereport(item):
+#     """
+#     Extends the PyTest Plugin to take and embed screenshot in html report, whenever test fails.
+#     :param item:
+#     """
+#     pytest_html = item.config.pluginmanager.getplugin('html')
+#     outcome = yield
+#     report = outcome.get_result()
+#     extra = getattr(report, 'extra', [])
+
+#     if report.when == 'call' or report.when == "setup":
+#         xfail = hasattr(report, 'wasxfail')
+#         if (report.skipped and xfail) or (report.failed and not xfail):
+#             file_name = report.nodeid.replace("::", "_") + ".png"
+#             _capture_screenshot(file_name)
+#             if file_name:
+#                 html = '<div><img src="%s" alt="screenshot" style="width:304px;height:228px;" ' \
+#                        'onclick="window.open(this.src)" align="right"/></div>' % file_name
+#                 extra.append(pytest_html.extras.html(html))
+#         report.extra = extra
 
 
 class Test_BasicTest(BaseTest):
@@ -68,6 +100,7 @@ class Test_BasicTest(BaseTest):
         self.audience_page = Audience(self.driver)
         self.campaign_page = Campaign(self.driver)
         self.recording_page = Recording(self.driver)
+        self.template_page = Templates(self.driver)
 
 
 def pytest_html_report_title(report):
