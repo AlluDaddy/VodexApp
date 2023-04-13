@@ -1,0 +1,2 @@
+1. every time should add row, column, cell and call drivers in for loop - to avoid stale exception.
+2.without storing it in variable should call and driver methods and send_keys or click e.tc.
