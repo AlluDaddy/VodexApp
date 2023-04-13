@@ -71,3 +71,6 @@ class Campaign(BasePage):
                 self.cols[3].click()
                 time.sleep(15)
                 break
+
+                
+#      stale exception:- wait.until(ExpectedConditions.refreshed(ExpectedConditions.stalenessOf("table")))
