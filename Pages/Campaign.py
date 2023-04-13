@@ -59,4 +59,11 @@ class Campaign(BasePage):
                 print(f"you added {cols[0].text} and {TestData.CAMPAIGN_NAME}")
                 cols[3].click()
                 time.sleep(15)
+<<<<<<< HEAD
                 break
+=======
+                break
+
+                
+#      stale exception:- wait.until(ExpectedConditions.refreshed(ExpectedConditions.stalenessOf("table")))
+>>>>>>> 33fa542637eef28a171aac5a2a947dc0421eb98f
