@@ -1,6 +1,6 @@
-from Pages.BasePage import BasePage
+from pages.BasePage import BasePage
 from selenium.webdriver.common.by import By
-from Config.config import TestData
+from config.config import TestData
 import time
 
 
@@ -12,6 +12,9 @@ class Recording(BasePage):
     RECORDINGS_SUCCESS_SAVE = (By.XPATH, '*//button[contains(text(),"Okay")][@type="button"]')
     PATH_WELCOME = "C:\\Users\\User\\Downloads\\welcome.mp3"
     PATH_BYE = "C:\\Users\\User\\Downloads\\Bye-bye.mp3"
+    RECORDINGS_OVERVIEW = (By.XPATH, '(//input[@type="checkbox"][@id="id_"])[2]')
+    RECORDINGS_OVERVIEW_SAVE = (By.XPATH, '*//button[@type="submit"][text()="Save"]')
+
 
     def __init__(self, driver):
         super().__init__(driver)
@@ -50,6 +53,8 @@ class Recording(BasePage):
         s.send_keys(recording_path)
         time.sleep(10)
         self.do_clickon(self.RECORDINGS_SAVE)
+        self.do_clickon(self.RECORDINGS_OVERVIEW)
+        self.do_clickon(self.RECORDINGS_OVERVIEW_SAVE)
         try:
             self.do_clickon(self.RECORDINGS_SUCCESS_SAVE)
         except:

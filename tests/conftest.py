@@ -4,14 +4,14 @@ import pytest
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from webdriver_manager.firefox import GeckoDriverManager
-from Config.config import TestData
-from Pages.AudiencePage import Audience
-from Pages.Campaign import Campaign
-from Pages.DashboardPage import Dashboard
-from Pages.LoginPage import Login
-from Pages.Recordings import Recording
-from Pages.Templates import Templates
-from Tests.test_base import BaseTest
+from config.config import TestData
+from pages.AudiencePage import Audience
+from pages.Campaign import Campaign
+from pages.DashboardPage import Dashboard
+from pages.LoginPage import Login
+from pages.Recordings import Recording
+from pages.Templates import Templates
+from tests.test_base import BaseTest
 from py.xml import html
 
 # driver = webdriver.Chrome(ChromeDriverManager().install())
@@ -91,9 +91,18 @@ def pytest_runtest_makereport(item):
 #                 extra.append(pytest_html.extras.html(html))
 #         report.extra = extra
 
-
+# ********** _ ! in class names
 class Test_BasicTest(BaseTest):
     # @pytest.fixture(autouse=True)
+
+    # def __init__(self):
+    #     self.login_page = Login(self.driver)
+    #     self.dashboard_page = Dashboard(self.driver)
+    #     self.audience_page = Audience(self.driver)
+    #     self.campaign_page = Campaign(self.driver)
+    #     self.recording_page = Recording(self.driver)
+    #     self.template_page = Templates(self.driver)
+
     def setup(self):
         self.login_page = Login(self.driver)
         self.dashboard_page = Dashboard(self.driver)

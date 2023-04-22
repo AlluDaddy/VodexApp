@@ -1,19 +1,14 @@
 import time
-
-import pytest
-
-from Tests.conftest import Test_BasicTest
-from Tests.test_base import BaseTest
-from Config.config import TestData
-from Pages.LoginPage import Login
+from tests.conftest import Test_BasicTest
+from config.config import TestData
 
 
 class TestMain(Test_BasicTest):
-    def test_main(self):
+    def test_login(self):
         # self.login_page.register(TestData.USER_NAME, TestData.PASSWORD)
         self.login_page.login(TestData.USER_NAME, TestData.PASSWORD)
         time.sleep(10)
-    #
+
     def test_dashboard(self):
         self.dashboard_page.get_all_data()
         self.dashboard_page.account_bal()
