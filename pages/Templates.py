@@ -1,13 +1,13 @@
-from pages.BasePage import BasePage
+from ..Pages.BasePage import BasePage
 from selenium.webdriver.common.by import By
-from config.config import TestData
+from ..Config.config import TestData
 import time
 
 
 class Templates(BasePage):
     TEMPLATES_LINK = (By.XPATH, "*//span[contains(text(),'Templates')]")
     REAL_ESTATE_SELECT = (By.XPATH, "*//span[contains(text(),'Real Estate')]/../../div/div/span/button[text()='Select']")
-    USE_TEMPLATE = (By.XPATH, '*//span/button[contains(@class,"btn-info")][text()="Use Template"]')
+    USE_TEMPLATE = (By.XPATH, '*//button[contains(@class,"btn-info")][text()="Use Template"]')
     PROCEED_ANYWAY = (By.XPATH, '*//button[text()="Proceed Anyway!"]')
     OKAY_BUTTON = (By.XPATH, '*//button[text()="Okay"]')
     ALREADY_USE_TEXT = (By.XPATH, '*//div[text()="Already in use"]')
@@ -28,4 +28,6 @@ class Templates(BasePage):
             if self.ALREADY_USE_TEXT:
                 self.do_clickon(self.OKAY_BUTTON)
         time.sleep(20)
+
+
 

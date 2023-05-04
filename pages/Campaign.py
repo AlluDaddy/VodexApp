@@ -1,8 +1,8 @@
 import time
-from pages.AudiencePage import Audience
-from pages.BasePage import BasePage
+from ..Pages.AudiencePage import Audience
+from ..Pages.BasePage import BasePage
 from selenium.webdriver.common.by import By
-from config.config import TestData
+from ..Config.config import TestData
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -62,6 +62,6 @@ class Campaign(BasePage):
             cols = i.find_elements(By.TAG_NAME, 'td')
             if cols[0].text == TestData.CAMPAIGN_NAME:
                 print(f"you added {cols[0].text} and {TestData.CAMPAIGN_NAME}")
-                cols[4].click()
+                cols[3].click()
                 time.sleep(15)
                 break

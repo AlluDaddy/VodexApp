@@ -1,18 +1,19 @@
 from datetime import datetime
-
+import os
 import pytest
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
-from webdriver_manager.firefox import GeckoDriverManager
-from config.config import TestData
-from pages.AudiencePage import Audience
-from pages.Campaign import Campaign
-from pages.DashboardPage import Dashboard
-from pages.LoginPage import Login
-from pages.Recordings import Recording
-from pages.Templates import Templates
-from tests.test_base import BaseTest
+
+from ..Pages.AudiencePage import Audience
+# from Pages.AudiencePage import Audience
+from ..Pages.Campaign import Campaign
+from ..Pages.DashboardPage import Dashboard
+from ..Pages.LoginPage import Login
+from ..Pages.Recordings import Recording
+from ..Pages.Templates import Templates
+from ..Tests.test_base import BaseTest
 from py.xml import html
+
 
 # driver = webdriver.Chrome(ChromeDriverManager().install())
 
@@ -35,10 +36,9 @@ def driver_init(request):
 
 
 def _capture_screenshot(name):
-    driver.get_screenshot_as_file(name)
+    driver.get_screenshot_as_file("Reports/"+name)
 
-    
- 
+
 @pytest.mark.hookwrapper
 def pytest_runtest_makereport(item):
     """
@@ -48,18 +48,12 @@ def pytest_runtest_makereport(item):
     pytest_html = item.config.pluginmanager.getplugin('html')
     outcome = yield
     report = outcome.get_result()
+    outcome._result.custom_description = item.function.__doc__
     extra = getattr(report, 'extra', [])
 
     if report.when == 'call' or report.when == "setup":
         xfail = hasattr(report, 'wasxfail')
-# <<<<<<< HEAD
-#         # if (report.skipped and xfail) or (report.failed and not xfail):
-#         file_name = report.nodeid.replace("::", "_") + ".png"
-#         _capture_screenshot(file_name)
-#         if file_name:
-#             html = '<div><img src="%s" alt="screenshot" style="width:304px;height:228px;" ' \
-# =======
-#         # if (report.failed and xfail) or (report.failed and not xfail):
+
         print(report.nodeid)
         file_name = report.nodeid.replace("::", "_") + ".png"
         _capture_screenshot(file_name)
@@ -67,41 +61,10 @@ def pytest_runtest_makereport(item):
             html = '<div><img src="%s" alt="screenshot" style="width:204px;height:128px;" onclick="window.open(this.src)" align="right"/></div>' % file_name
             extra.append(pytest_html.extras.html(html))
         report.extra = extra
- 
 
-# @pytest.mark.hookwrapper
-# def pytest_runtest_makereport(item):
-#     """
-#     Extends the PyTest Plugin to take and embed screenshot in html report, whenever test fails.
-#     :param item:
-#     """
-#     pytest_html = item.config.pluginmanager.getplugin('html')
-#     outcome = yield
-#     report = outcome.get_result()
-#     extra = getattr(report, 'extra', [])
 
-#     if report.when == 'call' or report.when == "setup":
-#         xfail = hasattr(report, 'wasxfail')
-#         if (report.skipped and xfail) or (report.failed and not xfail):
-#             file_name = report.nodeid.replace("::", "_") + ".png"
-#             _capture_screenshot(file_name)
-#             if file_name:
-#                 html = '<div><img src="%s" alt="screenshot" style="width:304px;height:228px;" ' \
-#                        'onclick="window.open(this.src)" align="right"/></div>' % file_name
-#                 extra.append(pytest_html.extras.html(html))
-#         report.extra = extra
-
-# ********** _ ! in class names
 class Test_BasicTest(BaseTest):
-    # @pytest.fixture(autouse=True)
 
-    # def __init__(self):
-    #     self.login_page = Login(self.driver)
-    #     self.dashboard_page = Dashboard(self.driver)
-    #     self.audience_page = Audience(self.driver)
-    #     self.campaign_page = Campaign(self.driver)
-    #     self.recording_page = Recording(self.driver)
-    #     self.template_page = Templates(self.driver)
 
     def setup(self):
         self.login_page = Login(self.driver)
@@ -111,7 +74,7 @@ class Test_BasicTest(BaseTest):
         self.recording_page = Recording(self.driver)
         self.template_page = Templates(self.driver)
 
-
+#
 def pytest_html_report_title(report):
     report.title = "VODEX UI"
 
@@ -144,3 +107,4 @@ def pytest_html_results_summary(prefix, summary, postfix):
     prefix.extend([html.h3("Adding prefix message")])
     summary.extend([html.h3("Adding summary message")])
     postfix.extend([html.h3("Adding postfix message")])
+

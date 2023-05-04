@@ -1,8 +1,8 @@
 import time
 
-from pages.BasePage import BasePage
+from ..Pages.BasePage import BasePage
 from selenium.webdriver.common.by import By
-from config.config import TestData
+from ..Config.config import TestData
 
 
 class Login(BasePage):
@@ -26,6 +26,7 @@ class Login(BasePage):
         self.do_send_keys(self.EMAIL, username)
         self.do_send_keys(self.PASSWORD, password)
         self.do_clickon(self.LOGIN_BUTTON)
+        print("Login")
         time.sleep(10)
 
     def register(self, username, password):

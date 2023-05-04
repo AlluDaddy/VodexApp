@@ -1,8 +1,8 @@
 import time
 
-from pages.BasePage import BasePage
+from ..Pages.BasePage import BasePage
 from selenium.webdriver.common.by import By
-from config.config import TestData
+from ..Config.config import TestData
 from selenium.webdriver.support.ui import Select
 
 
